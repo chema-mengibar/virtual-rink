@@ -43,6 +43,10 @@ export default class ToolService {
         return Games[this.flow.gameCursor].players
     }
 
+    get game() {
+        return Games[this.flow.gameCursor]
+    }
+
 
     flow_prepare() {
 
@@ -98,26 +102,27 @@ export default class ToolService {
 
 
         //B
-        const camConfigTop = {
-            fov: 45,
-            aspect: window.innerWidth / window.innerHeight,
-            near: 0.1,
-            far: 1000.0
-        };
-        this.cameraTop = this.cameraBuilder(camConfigTop);
-        this.rendererTop = new THREE.WebGLRenderer();
-        this.rendererTop.setSize(200, 160);
+        // const camConfigTop = {
+        //     fov: 45,
+        //     aspect: window.innerWidth / window.innerHeight,
+        //     near: 0.1,
+        //     far: 1000.0
+        // };
+        // this.cameraTop = this.cameraBuilder(camConfigTop);
+        // this.rendererTop = new THREE.WebGLRenderer();
+        // this.rendererTop.setSize(200, 160);
 
-        document.getElementById('mini').appendChild(this.rendererTop.domElement);
-        this.scene.add(this.cameraTop);
+        // document.getElementById('mini').appendChild(this.rendererTop.domElement);
+        // this.scene.add(this.cameraTop);
 
-        const controls = new OrbitControls(this.cameraTop, this.rendererTop.domElement);
-        controls.object.position.set(4, 1, 0);
-        controls.target = new THREE.Vector3(-6, 0, -6);
+        // const controls = new OrbitControls(this.cameraTop, this.rendererTop.domElement);
+        // controls.object.position.set(4, 1, 0);
+        // controls.target = new THREE.Vector3(-6, 0, -6);
 
-        this.cameraTop.position.set(20, 25, 25);
-        const pt = new THREE.Vector3(4, 0, 2)
-        this.cameraTop.lookAt(pt);
+        // this.cameraTop.position.set(20, 25, 25);
+        // const pt = new THREE.Vector3(4, 0, 2)
+        // this.cameraTop.lookAt(pt);
+
 
         // Bind
         this.flow_animate = this.flow_animate.bind(this)
@@ -142,7 +147,7 @@ export default class ToolService {
             _.scene.add(gltf.scene);
             _.step_set_assets()
             _.step_set_control()
-            // _.display()
+            _.display()
         }, undefined, function (error) {
             console.error('>>>>>>>>', error);
         });
@@ -170,7 +175,7 @@ export default class ToolService {
         });
 
         requestAnimationFrame(this.flow_animate)
-        this.rendererTop.render(this.scene, this.cameraTop);
+        // this.rendererTop.render(this.scene, this.cameraTop);
         this.renderer.render(this.scene, this.camera)
     }
 
@@ -196,7 +201,6 @@ export default class ToolService {
 
         // rink-floor,   rink-wall, rink-center, rink-goal-2, rink-goal-1
         this.scene.traverse(o => {
-            console.log(o.name)
             if (o.name === 'rink-center') {
                 targetCoords = {
                     x: o.position.x,
@@ -227,6 +231,9 @@ export default class ToolService {
             }
 
         });
+
+
+        this.step_build_toprink();
 
         Object.keys(_.players).forEach(playerKey => {
 
@@ -291,6 +298,56 @@ export default class ToolService {
     }
 
 
+
+    helper_coordToPx(x, z) {
+        const rinkWidthPx = 189;   // ancho (eje Z)
+        const rinkHeightPx = 315;  // alto (eje X)
+
+        const rinkUnitsX = 45;     // unidades eje X (vertical)
+        const rinkUnitsZ = 27;     // unidades eje Z (horizontal)
+
+        const scaleX = rinkHeightPx / rinkUnitsX;  // px por unidad eje X (vertical)
+        const scaleZ = rinkWidthPx / rinkUnitsZ;   // px por unidad eje Z (horizontal)
+
+        // Rotar 180° (invertir x y z)
+        const xRot = -x;
+        const zRot = -z;
+
+        const left = (zRot + rinkUnitsZ / 2) * scaleZ;
+
+        // Espejo vertical (invertimos el top)
+        const top = rinkHeightPx - (xRot + rinkUnitsX / 2) * scaleX;
+
+        return { left, top };
+      }
+
+
+    step_build_toprink(){
+        const rink = document.getElementById('top-rink');
+        Object.keys(this.players).forEach(playerKey => {
+
+            const playerData = this.players[playerKey];
+
+            console.log(playerData)
+
+            const team = playerKey.includes('-h-') ? `home` : `guest`;
+
+            const div = document.createElement('div');
+            div.classList.add('player');
+            
+            if( playerData.isFirst ){
+                div.classList.add('is-first');
+            }
+
+            div.classList.add(team);
+            const pos = this.helper_coordToPx(playerData.x, playerData.z);
+            div.style.left = pos.left + 'px';
+            div.style.top = pos.top + 'px';
+            div.title = playerKey; 
+            rink.appendChild(div);
+          });
+    }
+
     step_load_game() {
         this.clearScene();
         if (this.flow.gameCursor < Games.length - 1) {
@@ -305,6 +362,9 @@ export default class ToolService {
 
 
     clearScene() {
+
+
+        document.querySelectorAll('#top-rink .player').forEach(el => el.remove());
 
         const toRemove = [];
 
@@ -375,7 +435,7 @@ export default class ToolService {
 
     display() {
         const displayConatiner = document.getElementById('display');
-        displayConatiner.innerHTML = 'Scene: ' + this.flow.gameCursor;
+        displayConatiner.innerHTML = 'Scene: ' + this.game.id;
     }
 
 

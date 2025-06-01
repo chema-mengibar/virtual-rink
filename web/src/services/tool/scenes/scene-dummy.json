@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "name": "scene-0",
+    "first": "player-h-4"
+  },
+  "assets": [
+    {
+      "name": "player-g-goalie",
+      "loc": {
+        "x": -20.09,
+        "z": 0.05
+      }
+    },
+    {
+      "name": "player-h-goalie",
+      "loc": {
+        "x": 20.12,
+        "z": -0.1
+      }
+    }
+  ]
+}
