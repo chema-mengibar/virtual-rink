@@ -5,6 +5,11 @@ const routes = [
         path: '/',
         name: 'Rink',
         component: () => ( import('../views/Rink.vue')),
+    },
+    {
+        path: '/editor',
+        name: 'Editor',
+        component: () => ( import('../views/Editor.vue')),
     }
 ];
 

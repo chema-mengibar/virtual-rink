@@ -28,11 +28,15 @@ export default class ToolService {
         initialRotation: null
     }
 
+    games = [];
+
     constructor() {
         this._data = reactive({
             state: '', // loading, loaded
             team: ''
         })
+
+        this.games  = this.helper_shuffle(Games)
     }
 
     get team() {
@@ -40,12 +44,23 @@ export default class ToolService {
     }
 
     get players() {
-        return Games[this.flow.gameCursor].players
+        if(this.games.length === 0){return null}
+        return this.games[this.flow.gameCursor].players
     }
 
     get game() {
-        return Games[this.flow.gameCursor]
+        if(this.games.length === 0){return null}
+        return this.games[this.flow.gameCursor]
     }
+
+    helper_shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1)); // índice aleatorio entre 0 e i
+            [array[i], array[j]] = [array[j], array[i]];   // intercambio
+        }
+        return array;
+    }
+    
 
 
     flow_prepare() {
@@ -69,8 +84,8 @@ export default class ToolService {
         this.scene.background = new THREE.Color(bgColor);
 
 
-        const cameraHelper = new THREE.CameraHelper(this.camera);
-        this.scene.add(cameraHelper);
+        // const cameraHelper = new THREE.CameraHelper(this.camera);
+        // this.scene.add(cameraHelper);
 
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -137,10 +152,11 @@ export default class ToolService {
             box.getSize(size); // → dimensiones: ancho, alto, profundidad
             const center = new THREE.Vector3();
             box.getCenter(center); // → centro del modelo
-            console.log('Tamaño del modelo:', size);
-            console.log('Centro del modelo:', center);  // Object { x: 0, y: 0.75, z: 0 }
-            console.log('Mínimo:', box.min);
-            console.log('Máximo:', box.max);
+            
+            // console.log('Tamaño del modelo:', size);
+            // console.log('Centro del modelo:', center);  // Object { x: 0, y: 0.75, z: 0 }
+            // console.log('Mínimo:', box.min);
+            // console.log('Máximo:', box.max);
 
 
             _.flow_init_scene()
@@ -158,7 +174,7 @@ export default class ToolService {
         const _ = this;
         setTimeout(() => {
             this.addLight();
-            this.addGrid();
+            // this.addGrid();
             _.renderer.render(_.scene, _.camera);
             this.flow_animate();
             document.addEventListener('keydown', this.onDocumentKeyDown, false);
@@ -199,14 +215,36 @@ export default class ToolService {
 
         let targetCoords = null;
 
+        const targets = {
+            neutral: null,
+            home: null,
+            guest: null,
+        };
+
         // rink-floor,   rink-wall, rink-center, rink-goal-2, rink-goal-1
         this.scene.traverse(o => {
+
+            // rink-goal-1 guest, rink-goal-2 home
+            // console.log(o.name)
             if (o.name === 'rink-center') {
-                targetCoords = {
+            
+                targets.neutral= {
+                    x: o.position.x,
+                    z: o.position.z,
+                    team: 'neutral'
+                }
+
+            }else if( o.name === 'rink-goal-1' ){
+                targets.guest = {
                     x: o.position.x,
                     z: o.position.z,
                 }
-
+            }
+            else if( o.name === 'rink-goal-2' ){
+                targets.home = {
+                    x: o.position.x,
+                    z: o.position.z,
+                }
             }
             else if (o.name === 'rink-floor') {
                 const m = new THREE.MeshStandardMaterial({ color: '#5CACFB', side: THREE.DoubleSide })
@@ -238,10 +276,11 @@ export default class ToolService {
         Object.keys(_.players).forEach(playerKey => {
 
             const playerData = _.players[playerKey];
+            const team = playerKey.includes('-h-') ? `home` : `guest`;
 
             if (playerData.isFirst) {
 
-                const team = playerKey.includes('-h-') ? `home` : `guest`;
+            
                 this._data.team = team;
 
                 _.camera.position.set(playerData.x, 1, playerData.z);
@@ -256,6 +295,12 @@ export default class ToolService {
                 circle.name = '___' + playerKey
 
                 this.scene.add(circle);
+
+                if(team === 'home'){
+                    targetCoords = targets.guest
+                }else{
+                    targetCoords = targets.home
+                }
 
                 if (targetCoords) {
                     const pt = new THREE.Vector3(targetCoords.x, 1, targetCoords.z)
@@ -291,20 +336,22 @@ export default class ToolService {
                     plane.receiveShadow = true;
                     plane.name = '___' + playerKey
                     this.scene.add(plane);
+            
                 });
 
             }
+            this.helper_addCircle({x:playerData.x,  z: playerData.z}, team, playerKey);
         })
     }
 
 
 
     helper_coordToPx(x, z) {
-        const rinkWidthPx = 189;   // ancho (eje Z)
-        const rinkHeightPx = 315;  // alto (eje X)
+        const rinkWidthPx = 260;   // ancho (eje Z)
+        const rinkHeightPx = 440;  // alto (eje X)
 
-        const rinkUnitsX = 45;     // unidades eje X (vertical)
-        const rinkUnitsZ = 27;     // unidades eje Z (horizontal)
+        const rinkUnitsX = 44;     // unidades eje X (vertical)
+        const rinkUnitsZ = 26;     // unidades eje Z (horizontal)
 
         const scaleX = rinkHeightPx / rinkUnitsX;  // px por unidad eje X (vertical)
         const scaleZ = rinkWidthPx / rinkUnitsZ;   // px por unidad eje Z (horizontal)
@@ -323,29 +370,27 @@ export default class ToolService {
 
 
     step_build_toprink(){
-        const rink = document.getElementById('top-rink');
+
         Object.keys(this.players).forEach(playerKey => {
-
             const playerData = this.players[playerKey];
+            const r = this.helper_coordToPx(playerData.x, playerData.z);
+            console.log('>>>', playerKey, playerData, r)
+            const playerDom = document.getElementById(playerKey); 
+            console.log(playerDom)
+            playerDom.setAttribute('transform', `translate(${r.left}, ${r.top})`);
+              
 
-            console.log(playerData)
+            playerDom.setAttribute('data-is-first', playerData.isFirst);
+       
+        });
 
-            const team = playerKey.includes('-h-') ? `home` : `guest`;
+        // const a = this.players['player-h-4'];
+        // const b = this.players['player-h-2'];
 
-            const div = document.createElement('div');
-            div.classList.add('player');
-            
-            if( playerData.isFirst ){
-                div.classList.add('is-first');
-            }
+        // const d = this.helper_distancia(a,b);
+        // console.log(d)
 
-            div.classList.add(team);
-            const pos = this.helper_coordToPx(playerData.x, playerData.z);
-            div.style.left = pos.left + 'px';
-            div.style.top = pos.top + 'px';
-            div.title = playerKey; 
-            rink.appendChild(div);
-          });
+        // console.log('<<<', this.helper_pixelsToMeters(20, 440, 44))
     }
 
     step_load_game() {
@@ -364,7 +409,7 @@ export default class ToolService {
     clearScene() {
 
 
-        document.querySelectorAll('#top-rink .player').forEach(el => el.remove());
+        
 
         const toRemove = [];
 
@@ -450,8 +495,11 @@ export default class ToolService {
         console.log(keycode);
 
         switch (keycode) {
+            case 96:
+                this.centerFirst()
+                break;
             case 37:
-                this.moveCam('left')
+                this.rotate('left')
                 break;
             case 38:
                 this.moveCam('front')
@@ -460,7 +508,7 @@ export default class ToolService {
                 this.moveCam('back')
                 break;
             case 39:
-                this.moveCam('right')
+                this.rotate('right')
                 break;
             case 96:
                 this.step_load_game();
@@ -472,7 +520,7 @@ export default class ToolService {
         let x = this.camera.position.x;
         let z = this.camera.position.z;
 
-        const center = new THREE.Vector3(0, 0, 0);
+        // const center = new THREE.Vector3(0, 0, 0);
 
         if (direction === 'back') {
             x += 0.1
@@ -487,9 +535,26 @@ export default class ToolService {
             z -= 0.1
         }
 
-
+        const pt = this.flow.controls.target
         this.camera.position.set(x, this.camera.position.y, z);
-        this.camera.lookAt(center);
+        this.camera.lookAt(pt);
+    }
+
+    rotate(direction = 'left'){
+        const slider = document.getElementById('cam-slider');
+        const value = parseInt(slider.value,10);
+        let angleDeg = value;
+        const dif = 40;
+         if (direction === 'left') {
+            angleDeg += dif
+        }
+        else {
+            angleDeg -= dif
+        }
+        const angleRad = THREE.MathUtils.degToRad(angleDeg); // conversión
+        this.camera.rotation.y = angleRad;
+        console.log('>>>>>>>>>>', angleDeg)
+        document.getElementById('cam-slider').value = angleDeg;
     }
 
 
@@ -543,8 +608,47 @@ export default class ToolService {
     }
 
 
+    helper_addCircle({x,z}, teamKey, playerKey){
+        const radius = 1.80; // en metros
+        const segments = 32;
+
+        const circleGeometry = new THREE.CircleGeometry(radius, segments);
+
+        const color = teamKey === 'home' ? 0xff0000 : 0xffffff
+        const circleMaterial = new THREE.MeshBasicMaterial({ color, 
+            transparent: true,
+            opacity: 0.5,
+            depthWrite: false,
+            blending: THREE.NormalBlending, 
+        }); 
+        const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+
+        // Opcional: girar para que esté sobre el suelo
+        circle.rotation.x = -Math.PI / 2;
+        circle.position.set(x, 0.05, z);
+        circle.name = '___circle' + playerKey
+
+        // Añadir a la escena
+        this.scene.add(circle);
+    }
 
 
 
+
+    helper_metersToPixels(meters, svgSize, realSize) {
+    return (meters * svgSize) / realSize;
+    }
+
+
+    helper_pixelsToMeters(pixels, svgSize, realSize) {
+    return (pixels * realSize) / svgSize;
+    }
+
+
+    helper_distancia(a, b) {
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        return Math.sqrt(dx * dx + dz * dz);
+      }
 
 }

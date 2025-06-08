@@ -1,4 +1,9 @@
-Rink<script>
+
+
+<script>
+
+import SvgRink from '../components/SvgRink.vue'
+
 export default {
   name: "Rink",
   inject: ["$services"],
@@ -16,15 +21,14 @@ export default {
     load: function () {
       const _ = this;
       this.$services.toolService.flow_prepare();
-      const mainFrame = document.querySelector("#main-frame");
-      mainFrame.addEventListener("dblclick", function () {
-        _.$services.toolService.fullScreen();
-      });
     },
   },
   created() {
     const _ = this;
     _.t = this.$services.localeService.D();
+  },
+  components:{
+    SvgRink
   },
   mounted() {
     this.$nextTick();
@@ -49,13 +53,16 @@ export default {
 .toolbar {
   padding: 20px;
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
+  right:0;
+  margin:0 auto;
   display: flex;
   background-color: rgba(0, 0, 0, 0.1);
-  width: 100%;
+  width: calc(100vw - 400px);
   display: flex;
   gap: 20px;
+  z-index:200;
 }
 
 .tool {
@@ -103,62 +110,79 @@ export default {
   }
 }
 
-
 .top-rink {
-      position: absolute;
-      top:0;
-      left:0;
-      padding:5px;
-      background: #1a1a1a;
-      border: 2px solid #ccc;
-
-    .players-wrapper{
-      position: relative;
-      height: calc(45px * 7);   
-      width: calc(27px * 7);  
-    }
-
-    .line{
-      position: absolute;
-      width:50%;
-      height:50%;
-      border: 1px solid grey;
-
-      &.tl{ top:0; left:0}
-      &.tr{top:0; right:0}
-      &.bl{bottom:0; left:0}
-      &.br{bottom:0; right:0}
-    }
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 5px;
+  background: #1a1a1a38;
+  border: 2px solid #ccc;
+  z-index:3000;
 
 
-    .player {
-      position: absolute;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-    }
-
-    .is-first{
-      border:2px solid yellow;
-    }
-
-    .home { background: red; }
-    .guest { background: white; }
+  svg{
+    width:200px;
+    height:auto;
+  }
+  
 }
 
+.controls {
+  position: absolute;
+  z-index: 100;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
 
+  .control {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    //background-color: rgba(255, 56, 30, 0.589);
+
+
+    $colorLine : 1px solid rgba(255, 0, 0, 0.5);
+
+    &.cl {
+      top: 0;
+      left: 0;
+      margin: auto 0;
+      bottom: 0;
+       height: 100vh;
+       border-right: $colorLine;
+    }
+    &.cr {
+      top: 0;
+      right: 0;
+      margin: auto 0;
+      bottom: 0;
+       height: 100vh;
+              border-left:  $colorLine;
+    }
+    &.bc {
+      bottom: 0;
+      left: 0;
+      right: 0;
+      margin: 0 auto;
+      width: calc(100vw - 420px);
+             border-top:  $colorLine;
+    }
+  }
+}
 </style>
 
 <template>
   <div id="main-frame"></div>
 
-  <div  class="top-rink">
+  <div class="top-rink">
     <div class="line tl"></div>
     <div class="line tr"></div>
     <div class="line bl"></div>
     <div class="line br"></div>
-    <div id="top-rink" class="players-wrapper"></div>
-   
+    <div id="top-rink" class="players-wrapper">
+      <SvgRink />
+    </div>
   </div>
 
   <div class="info-panel">
@@ -170,12 +194,16 @@ export default {
   </div>
 
   <div class="toolbar">
-    <div class="tool">
-      <button v-on:click="centerFirst()">Reset</button>
-    </div>
+   <div class="tool"><button v-on:click="$services.toolService.fullScreen()">F</button></div>
     <div class="tool full">
-      <input type="range" id="cam-slider" min="-180" max="180" value="0" />
+      <input type="range" id="cam-slider" min="-240" max="240" value="0" />
     </div>
-    <div class="tool"><button v-on:click="nextGame()">Next game</button></div>
+    <div class="tool"><button v-on:click="nextGame()">#</button></div>
+  </div>
+
+  <div id="controls" className="controls">
+    <div id="control-l"   v-on:click="$services.toolService.rotate('left')" className="control cl"></div>
+    <div id="control-r" v-on:click="$services.toolService.rotate('right')"  className="control cr"></div>
+    <div id="control-b"  v-on:click="$services.toolService.centerFirst()" className="control bc"></div>
   </div>
 </template>

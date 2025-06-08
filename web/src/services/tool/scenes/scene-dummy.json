@@ -1,7 +1,9 @@
 {
   "meta": {
-    "name": "scene-0",
-    "first": "player-h-4"
+    "name": "scene-dummy",
+    "description":"",
+    "solution":"",
+    "first": "player-g-goalie"
   },
   "assets": [
     {
@@ -14,8 +16,8 @@
     {
       "name": "player-h-goalie",
       "loc": {
-        "x": 20.12,
-        "z": -0.1
+        "x": 20.09,
+        "z": -0.05
       }
     }
   ]
