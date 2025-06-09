@@ -4,26 +4,29 @@ import Scene1 from './scenes/scene-1.json'
 import Scene2 from './scenes/scene-2.json'
 import Scene3 from './scenes/scene-3.json'
 import Scene4 from './scenes/scene-4.json'
+import Scene6 from './scenes/scene-6.json'
+import Scene7 from './scenes/scene-7.json'
 
 
 const scenes = [
     // SceneDummy, 
+    Scene7,
     Scene4,
     Scene0,
     Scene1,
     Scene2,
     Scene3,
+    Scene6
 ].map(sceneJson => {
 
     const players = {};
     sceneJson.assets.forEach(assetItem => {
         players[assetItem.name] = {
             x: parseFloat(assetItem.loc.x),
-            z: parseFloat( assetItem.loc.z),
-            isFirst: sceneJson.meta.first  === assetItem.name
+            z: parseFloat(assetItem.loc.z),
+            isFirst: sceneJson.meta.first === assetItem.name
         }
     })
-
 
     return {
         id: sceneJson.meta.name,
@@ -35,10 +38,7 @@ const scenes = [
     }
 })
 
-
 export default scenes;
-
-
 
 
 /*
