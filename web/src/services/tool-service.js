@@ -161,10 +161,6 @@ export default class ToolService {
 
     step_set_assets() {
         const _ = this;
-
-
-
-
         const imagesList = [1, 2]
 
         let targetCoords = null;
