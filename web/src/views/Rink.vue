@@ -115,8 +115,6 @@ export default {
   top: 0;
   left: 0;
   padding: 5px;
-  background: #1a1a1a38;
-  border: 2px solid #ccc;
   z-index:3000;
 
 

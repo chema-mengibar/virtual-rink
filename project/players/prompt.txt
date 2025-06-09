@@ -1,0 +1,11 @@
+necesito que generes 3 imagenes de un jugador de hockey hielo. Te voy a dar una referencia para que utilices:
+los mismos colores de la equipacion
+que la pose se de movimiento, en accion de juego
+la camara a la altura de la vista
+que el cuerpo y el stick esten completos
+que las proporciones sean reales, no pongas un stick corto, o  manos raras
+fondo transparente si puede ser, es decir , genera un png
+no es necesaria mucha resolucion, 
+que tenga de alto unos 500 px
+que sea lo mas real posible, si necesitas menos para hacer una ilustracion adelante, pero que sea realista
+gracias :)
