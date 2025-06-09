@@ -18,8 +18,8 @@ const scenes = [
     const players = {};
     sceneJson.assets.forEach(assetItem => {
         players[assetItem.name] = {
-            x: assetItem.loc.x,
-            z: assetItem.loc.z,
+            x: parseFloat(assetItem.loc.x),
+            z: parseFloat( assetItem.loc.z),
             isFirst: sceneJson.meta.first  === assetItem.name
         }
     })

@@ -10,6 +10,9 @@ export default {
   data: () => ({
     t: {},
     data: null,
+    model:{
+      targetPlayerId: ''
+    }
   }),
   methods: {
     centerFirst: function () {
@@ -192,11 +195,28 @@ export default {
   </div>
 
   <div class="toolbar">
-   <div class="tool"><button v-on:click="$services.toolService.fullScreen()">F</button></div>
+   <div class="tool">
+      <button v-on:click="$services.visualsService.clearSceneVisual()">VX</button>
+      <button v-on:click="$services.toolService.fullScreen()">F</button>
+      <button v-on:click="$services.visualsService.draw_lines(model.targetPlayerId)">D</button>
+
+       <select v-model="model.targetPlayerId" >
+        <option value="player-h-1">H 1</option>
+        <option value="player-h-2">H 2</option>
+        <option value="player-h-3">H 3</option>
+        <option value="player-h-4">H 4</option>
+
+        <option value="player-g-1">G 1</option>
+        <option value="player-g-2">G 2</option>
+        <option value="player-g-3">G 3</option>
+        <option value="player-g-4">G 4</option>
+      </select>
+
+    </div>
     <div class="tool full">
       <input type="range" id="cam-slider" min="-240" max="240" value="0" />
     </div>
-    <div class="tool"><button v-on:click="nextGame()">#</button></div>
+    <div class="tool"><button v-on:click="nextGame()">N</button></div>
   </div>
 
   <div id="controls" className="controls">

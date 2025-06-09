@@ -1,6 +1,5 @@
 import { reactive } from 'vue';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import Games from './tool/Games'
@@ -30,12 +29,13 @@ export default class ToolService {
 
     games = [];
 
-    constructor() {
+    constructor( visualsService ) {
         this._data = reactive({
             state: '', // loading, loaded
             team: ''
         })
 
+        this.visualsService  = visualsService
         this.games  = this.helper_shuffle(Games)
     }
 
@@ -62,12 +62,13 @@ export default class ToolService {
     }
     
 
+    renderCallbak(){
+        this.renderer.render(this.scene, this.camera);
+    }
 
     flow_prepare() {
-
         const _ = this;
 
-        //A
         const camConfig = {
             fov: 75,
             aspect: window.innerWidth / window.innerHeight,
@@ -83,64 +84,18 @@ export default class ToolService {
         this.scene.add(this.camera);
         this.scene.background = new THREE.Color(bgColor);
 
-
-        // const cameraHelper = new THREE.CameraHelper(this.camera);
-        // this.scene.add(cameraHelper);
-
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
-
-
-        //this.flow.controls  = new OrbitControls(this.camera, this.renderer.domElement);
-        // this.flow.controls.enableDamping = true;
-        // this.flow.controls.dampingFactor = 0.05;
-        // this.flow.controls.minDistance = 5;
-        // this.flow.controls.maxDistance = 50;
-
+     
         this.flow.controls = new FirstPersonControls(this.camera, this.renderer.domElement);
         this.flow.controls.lookSpeed = 0.1;
         this.flow.controls.movementSpeed = 5;
         this.flow.controls.lookVertical = false;
 
-        // document.body.requestPointerLock();
-
-        // document.addEventListener('mousemove', (event) => {
-        //   const movementX = event.movementX || 0;
-        //   const movementY = event.movementY || 0;
-
-        //   this.camera.rotation.y += movementX * 0.002;
-        //   //this.camera.rotation.x += movementY * 0.002;
-        // });
-
-
-
-
-        //B
-        // const camConfigTop = {
-        //     fov: 45,
-        //     aspect: window.innerWidth / window.innerHeight,
-        //     near: 0.1,
-        //     far: 1000.0
-        // };
-        // this.cameraTop = this.cameraBuilder(camConfigTop);
-        // this.rendererTop = new THREE.WebGLRenderer();
-        // this.rendererTop.setSize(200, 160);
-
-        // document.getElementById('mini').appendChild(this.rendererTop.domElement);
-        // this.scene.add(this.cameraTop);
-
-        // const controls = new OrbitControls(this.cameraTop, this.rendererTop.domElement);
-        // controls.object.position.set(4, 1, 0);
-        // controls.target = new THREE.Vector3(-6, 0, -6);
-
-        // this.cameraTop.position.set(20, 25, 25);
-        // const pt = new THREE.Vector3(4, 0, 2)
-        // this.cameraTop.lookAt(pt);
-
-
         // Bind
         this.flow_animate = this.flow_animate.bind(this)
+        this.renderCallbak = this.renderCallbak.bind(this)
         this.onDocumentKeyDown = this.onDocumentKeyDown.bind(this)
 
         // Load
@@ -158,9 +113,9 @@ export default class ToolService {
             // console.log('Mínimo:', box.min);
             // console.log('Máximo:', box.max);
 
-
             _.flow_init_scene()
             _.scene.add(gltf.scene);
+            _.step_bridge_visual();
             _.step_set_assets()
             _.step_set_control()
             _.display()
@@ -191,25 +146,24 @@ export default class ToolService {
         });
 
         requestAnimationFrame(this.flow_animate)
-        // this.rendererTop.render(this.scene, this.cameraTop);
         this.renderer.render(this.scene, this.camera)
     }
 
     step_set_control() {
-
         const slider = document.getElementById('cam-slider');
         slider.addEventListener('input', (event) => {
             const angleDeg = Number(event.target.value);
             const angleRad = THREE.MathUtils.degToRad(angleDeg); // conversión
             this.camera.rotation.y = angleRad;
-
         });
-
     }
 
 
     step_set_assets() {
         const _ = this;
+
+
+
 
         const imagesList = [1, 2]
 
@@ -279,7 +233,6 @@ export default class ToolService {
             const team = playerKey.includes('-h-') ? `home` : `guest`;
 
             if (playerData.isFirst) {
-
             
                 this._data.team = team;
 
@@ -336,9 +289,7 @@ export default class ToolService {
                     plane.receiveShadow = true;
                     plane.name = '___' + playerKey
                     this.scene.add(plane);
-            
                 });
-
             }
             this.helper_addCircle({x:playerData.x,  z: playerData.z}, team, playerKey);
         })
@@ -370,27 +321,13 @@ export default class ToolService {
 
 
     step_build_toprink(){
-
         Object.keys(this.players).forEach(playerKey => {
             const playerData = this.players[playerKey];
             const r = this.helper_coordToPx(playerData.x, playerData.z);
-            console.log('>>>', playerKey, playerData, r)
             const playerDom = document.getElementById(playerKey); 
-            console.log(playerDom)
             playerDom.setAttribute('transform', `translate(${r.left}, ${r.top})`);
-              
-
             playerDom.setAttribute('data-is-first', playerData.isFirst);
-       
         });
-
-        // const a = this.players['player-h-4'];
-        // const b = this.players['player-h-2'];
-
-        // const d = this.helper_distancia(a,b);
-        // console.log(d)
-
-        // console.log('<<<', this.helper_pixelsToMeters(20, 440, 44))
     }
 
     step_load_game() {
@@ -400,18 +337,26 @@ export default class ToolService {
         } else {
             this.flow.gameCursor = 0;
         }
-        
+
+        this.step_bridge_visual();
         this.step_set_assets();
         this.display();
     }
 
+    step_bridge_visual(){
+        this.visualsService.setScene(this.scene, this.renderCallbak, this.players);
+    }
+
+
+
 
     clearScene() {
-
-
-        
-
         const toRemove = [];
+
+        const g = document.getElementById("svg-data");
+        while (g.firstChild) {
+            g.removeChild(g.firstChild);
+        }
 
         this.scene.traverse((o) => {
             if (o.name && o.name.includes('___')) {
@@ -440,7 +385,6 @@ export default class ToolService {
     }
 
     addLight() {
-
         const ambientLight = new THREE.AmbientLight(0xffffff, 2);
         this.scene.add(ambientLight);
 
@@ -458,13 +402,6 @@ export default class ToolService {
         light.shadow.camera.top = 20;
         light.shadow.camera.bottom = -20;
         this.scene.add(light)
-
-        // const shadowCamHelper = new THREE.CameraHelper(light.shadow.camera);
-        // this.scene.add(shadowCamHelper);
-
-        // const light_helper = new THREE.DirectionalLightHelper(light, 5, 0xff0000); // tamaño y color del helper
-        // this.scene.add(light_helper);
-
     }
 
     addGrid() {
@@ -520,8 +457,6 @@ export default class ToolService {
         let x = this.camera.position.x;
         let z = this.camera.position.z;
 
-        // const center = new THREE.Vector3(0, 0, 0);
-
         if (direction === 'back') {
             x += 0.1
         }
@@ -553,7 +488,6 @@ export default class ToolService {
         }
         const angleRad = THREE.MathUtils.degToRad(angleDeg); // conversión
         this.camera.rotation.y = angleRad;
-        console.log('>>>>>>>>>>', angleDeg)
         document.getElementById('cam-slider').value = angleDeg;
     }
 
@@ -570,6 +504,7 @@ export default class ToolService {
         }, 1000)
     }
 
+
     // Helpers
 
     raw(obj) {
@@ -577,30 +512,15 @@ export default class ToolService {
     }
 
 
-    // controls 
-
     centerFirst() {
-
-        // // CASE: Orbital controls
-        // const pos = this.flow.firstCoords;
-        // const pt = this.flow.pt
-        // const ptVector = new THREE.Vector3(pt.x, pt.y, pt.z);;
-        // this.flow.controls.target.copy(ptVector);
-        // this.camera.position.set(pos.x, pos.y, pos.z);
-        // this.flow.controls.update();
-
         // // CASE: FirstPerson controls
         this.camera.rotation.copy(this.flow.initialRotation);
-
-
         const cameraPos = this.camera.position;
         const target = new THREE.Vector3(this.flow.pt.x, cameraPos.y, this.flow.pt.z);
         const dir = new THREE.Vector3().subVectors(cameraPos, target);
         const angleRad = Math.atan2(dir.x, dir.z); // atan2 da el ángulo desde Z
         const angleDeg = THREE.MathUtils.radToDeg(angleRad);
-
         document.getElementById('cam-slider').value = angleDeg;
-
     }
 
     nextGame() {
@@ -632,23 +552,18 @@ export default class ToolService {
         this.scene.add(circle);
     }
 
-
-
-
     helper_metersToPixels(meters, svgSize, realSize) {
-    return (meters * svgSize) / realSize;
+        return (meters * svgSize) / realSize;
     }
-
 
     helper_pixelsToMeters(pixels, svgSize, realSize) {
-    return (pixels * realSize) / svgSize;
+        return (pixels * realSize) / svgSize;
     }
-
 
     helper_distancia(a, b) {
         const dx = b.x - a.x;
         const dz = b.z - a.z;
         return Math.sqrt(dx * dx + dz * dz);
-      }
+    }
 
 }
