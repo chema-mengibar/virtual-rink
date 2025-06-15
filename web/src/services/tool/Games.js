@@ -6,10 +6,12 @@ import Scene3 from './scenes/scene-3.json'
 import Scene4 from './scenes/scene-4.json'
 import Scene6 from './scenes/scene-6.json'
 import Scene7 from './scenes/scene-7.json'
+import Scene8 from './scenes/scene-8.json'
 
 
 const scenes = [
     // SceneDummy, 
+    Scene8,
     Scene7,
     Scene4,
     Scene0,

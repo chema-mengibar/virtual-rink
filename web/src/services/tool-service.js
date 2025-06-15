@@ -58,7 +58,9 @@ export default class ToolService {
             const j = Math.floor(Math.random() * (i + 1)); // índice aleatorio entre 0 e i
             [array[i], array[j]] = [array[j], array[i]];   // intercambio
         }
-        return array;
+        const t =  [...array];
+        console.log(t)
+        return t;
     }
     
 
